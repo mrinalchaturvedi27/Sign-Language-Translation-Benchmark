@@ -3,10 +3,10 @@
 
 # Data Configuration
 data:
-  train_path: "/DATA7/vaibhav/tokenization/train_split_unicode_filtered.csv"
-  val_path: "/DATA7/vaibhav/tokenization/val_split_unicode_filtered.csv"
-  test_path: "/DATA7/vaibhav/tokenization/test_split_unicode_filtered.csv"
-  pose_dir: "/DATA7/vaibhav/isign/Data/iSign-poses_v1.1/"
+  train_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csvh"
+  val_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
+  test_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
+  pose_dir: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance/"
   
   max_frames: 300
   max_length: 128
