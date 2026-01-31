@@ -63,8 +63,8 @@ fi
 # Make scripts executable
 echo ""
 echo "Making scripts executable..."
-chmod +x train_single_gpu.sh
-chmod +x train_multi_gpu.sh
+chmod +x scripts/train_single_gpu.sh
+chmod +x scripts/train_multi_gpu.sh
 
 echo "✓ Scripts are executable"
 
