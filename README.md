@@ -73,11 +73,11 @@ Model Category	Recommended Models	Notes
 Encoder-Decoder	t5-base, bart-large, mbart-large-50	Best for multilingual & traditional Seq2Seq tasks.
 Causal LM	Qwen2.5-7B, Llama-3.1-8B, Mistral-7B	Recommended for high-quality, large-scale translation.
 🧪 Training Configuration
-
+All experiment parameters, including the **Experiment Name**, are managed in the **YAML** files.
 All experiments are driven by YAML. To change a model, you only need to update the model block:
-# Example:
 # YAML
 ```
+# configs/my_experiment.yaml
 model:
   name: "t5-base"
   tokenizer: "t5-base"
@@ -87,6 +87,7 @@ training:
   learning_rate: 3e-4
   use_wandb: true
   project_name: "sign-language-translation"
+  run_name: "qwen2.5_7b_lora_isign"  # <--- Change this for every new experiment
 ```
 Execution Commands
 
