@@ -35,15 +35,12 @@ sign-language-translation/
 
 We recommend using Conda for better CUDA compatibility.
 ```
-Bash
 conda create -n signlang python=3.10 -y
 conda activate signlang
 pip install -r requirements.txt
 ```
 Verify Hardware Acceleration:
 ```
-Bash
-
 nvidia-smi
 python -c "import torch; print(torch.cuda.is_available())"
 ```
@@ -78,7 +75,7 @@ Causal LM	Qwen2.5-7B, Llama-3.1-8B, Mistral-7B	Recommended for high-quality, lar
 🧪 Training Configuration
 
 All experiments are driven by YAML. To change a model, you only need to update the model block:
-YAML
+# YAML
 ```
 model:
   name: "t5-base"
@@ -94,14 +91,10 @@ Execution Commands
 
 # Single GPU:
 ```
-Bash
-
 python train.py --config configs/my_experiment.yaml
 ```
 # Multi-GPU (DDP):
 ```
-Bash
-
 bash scripts/train_multi_gpu.sh configs/my_experiment.yaml 4
 ```
 ## 📊 Experiment Tracking
