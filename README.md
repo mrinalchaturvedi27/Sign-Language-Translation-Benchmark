@@ -31,22 +31,23 @@ sign-language-translation/
 ├── requirements.txt
 └── README.md
 ```
-⚙️ Environment Setup
+## ⚙️ Environment Setup
 
 We recommend using Conda for better CUDA compatibility.
+```
 Bash
-
 conda create -n signlang python=3.10 -y
 conda activate signlang
 pip install -r requirements.txt
-
+```
 Verify Hardware Acceleration:
+```
 Bash
 
 nvidia-smi
 python -c "import torch; print(torch.cuda.is_available())"
-
-🚀 Quick Start
+```
+## 🚀 Quick Start
 1. Prepare Data
 
 Ensure you have:
@@ -70,7 +71,7 @@ Supported Keypoint Structures:
 
     [!TIP] Normalization: All inputs are automatically converted to input_ids (max_frames, num_keypoints) and attention_mask (max_frames,). Padding and truncation are handled based on your config.
 
-🧠 Model Support
+## 🧠 Model Support
 Model Category	Recommended Models	Notes
 Encoder-Decoder	t5-base, bart-large, mbart-large-50	Best for multilingual & traditional Seq2Seq tasks.
 Causal LM	Qwen2.5-7B, Llama-3.1-8B, Mistral-7B	Recommended for high-quality, large-scale translation.
@@ -78,7 +79,7 @@ Causal LM	Qwen2.5-7B, Llama-3.1-8B, Mistral-7B	Recommended for high-quality, lar
 
 All experiments are driven by YAML. To change a model, you only need to update the model block:
 YAML
-
+```
 model:
   name: "t5-base"
   tokenizer: "t5-base"
@@ -88,20 +89,22 @@ training:
   learning_rate: 3e-4
   use_wandb: true
   project_name: "sign-language-translation"
-
+```
 Execution Commands
 
-Single GPU:
+# Single GPU:
+```
 Bash
 
 python train.py --config configs/my_experiment.yaml
-
-Multi-GPU (DDP):
+```
+# Multi-GPU (DDP):
+```
 Bash
 
 bash scripts/train_multi_gpu.sh configs/my_experiment.yaml 4
-
-📊 Experiment Tracking
+```
+## 📊 Experiment Tracking
 
 We use Weights & Biases for collaborative monitoring.
 
