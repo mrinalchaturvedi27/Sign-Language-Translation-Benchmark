@@ -7,7 +7,7 @@ This framework supports both **Seq2Seq** (encoder–decoder) and **Causal LM** (
 
 
 
-## 🔥 Key Highlights
+##  Key Highlights
 * **Model-agnostic:** Swap architectures by simply editing a YAML file.
 * **Robust Dataloader:** Handles ragged, noisy, and inconsistent pose inputs out of the box.
 * **Memory-efficient:** Native support for **LoRA** and **4-bit/8-bit quantization**.
@@ -17,7 +17,7 @@ This framework supports both **Seq2Seq** (encoder–decoder) and **Causal LM** (
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 ```text
 sign-language-translation/
 ├── configs/               # Experiment YAMLs (ONE config = ONE experiment)
@@ -31,7 +31,7 @@ sign-language-translation/
 ├── requirements.txt
 └── README.md
 ```
-## ⚙️ Environment Setup
+##  Environment Setup
 
 We recommend using Conda for better CUDA compatibility.
 ```
@@ -44,7 +44,7 @@ Verify Hardware Acceleration:
 nvidia-smi
 python -c "import torch; print(torch.cuda.is_available())"
 ```
-## 🚀 Quick Start
+##  Quick Start
 1. Prepare Data
 
 Ensure you have:
@@ -68,7 +68,7 @@ Supported Keypoint Structures:
 
     [!TIP] Normalization: All inputs are automatically converted to input_ids (max_frames, num_keypoints) and attention_mask (max_frames,). Padding and truncation are handled based on your config.
 
-## 🧠 Model Support
+##  Model Support
 Model Category	Recommended Models	Notes
 Encoder-Decoder	t5-base, bart-large, mbart-large-50	Best for multilingual & traditional Seq2Seq tasks.
 Causal LM	Qwen2.5-7B, Llama-3.1-8B, Mistral-7B	Recommended for high-quality, large-scale translation.
@@ -99,7 +99,7 @@ bash scripts/train_single_gpu.sh configs/my_experiment.yaml
 ```
 bash scripts/train_multi_gpu.sh configs/my_experiment.yaml 4
 ```
-## 📊 Experiment Tracking
+##  Experiment Tracking
 
 We use Weights & Biases for collaborative monitoring.
 
@@ -109,7 +109,7 @@ We use Weights & Biases for collaborative monitoring.
 
     Compare BLEU scores, loss curves, and GPU utilization across different model architectures in real-time.
 
-🚨 Troubleshooting
+ Troubleshooting
 
     Out of Memory (OOM): Enable load_in_4bit: true in your config or reduce batch_size.
 
