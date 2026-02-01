@@ -75,7 +75,7 @@ Causal LM	Qwen2.5-7B, Llama-3.1-8B, Mistral-7B	Recommended for high-quality, lar
 🧪 Training Configuration
 
 All experiments are driven by YAML. To change a model, you only need to update the model block:
-## Example:
+# Example:
 # YAML
 ```
 model:
