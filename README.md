@@ -30,7 +30,7 @@ sign-language-translation/
 ├── train.py               # Main entry point
 ├── requirements.txt
 └── README.md
-
+```
 ⚙️ Environment Setup
 
 We recommend using Conda for better CUDA compatibility.
