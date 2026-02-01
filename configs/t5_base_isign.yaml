@@ -2,15 +2,15 @@
 
 # Data Configuration
 data:
-  train_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csvh"
-  val_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
-  test_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
-  pose_dir: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance/"
+  train_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csv"
+  val_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
+  test_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
+  pose_dir: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance"
   
   max_frames: 300
   max_length: 128
   step_frames: 5  # Downsample every 5th frame
-  num_keypoints: 152  # From your MediaPipe extraction
+  num_keypoints: 266  # From your MediaPipe extraction
 
 # Model Configuration
 model:
@@ -33,7 +33,7 @@ model:
 training:
   # Basic settings
   num_epochs: 100
-  batch_size: 32  # Adjust based on your GPU memory
+  batch_size: 16  # Adjust based on your GPU memory
   learning_rate: 3e-4
   weight_decay: 0.01
   betas: [0.9, 0.999]
@@ -58,7 +58,7 @@ training:
   max_gen_length: 128
   
   # Logging
-  use_wandb: true
+  use_wandb: false
   project_name: "sign-language-translation"
   run_name: "t5_base_isign"
   

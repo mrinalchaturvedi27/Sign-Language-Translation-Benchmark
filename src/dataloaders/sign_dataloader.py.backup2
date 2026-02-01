@@ -4,7 +4,6 @@ Supports both .pose and .pkl formats with variable keypoint counts
 """
 
 import torch
-import fcntl  # For file locking in multi-process
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
@@ -25,7 +24,7 @@ except ImportError:
     logger.warning("pose_format not available, .pose files not supported")
 
 
-class SignLanguageDataset(Dataset): 
+class SignLanguageDataset(Dataset):
     def __init__(
         self,
         data_path: str,
@@ -73,32 +72,24 @@ class SignLanguageDataset(Dataset):
 
     def _load_pose(self, uid: str) -> np.ndarray:
         """Load pose from either .pkl or .pose file"""
-        # Try .pkl first (your format)
+        # Try .pkl first (pickle format)
         pkl_path = self.pose_dir / f"{uid}.pkl"
         if pkl_path.exists():
             return self._load_pkl_pose(pkl_path)
-    
-        # Try .pose format (if you have those)
+        
+        # Try .pose format
         pose_path = self.pose_dir / f"{uid}.pose"
         if pose_path.exists():
-            logger.warning(f".pose format not supported in this version, using empty pose")
-            return self._empty_pose()
-    
+            return self._load_pose_format(pose_path)
+        
         logger.warning(f"Pose file not found: {uid} (tried .pkl and .pose)")
         return self._empty_pose()
-
+    
     def _load_pkl_pose(self, path: Path) -> np.ndarray:
-        """Load pose from pickle file with file locking for multi-process"""
+        """Load pose from pickle file"""
         try:
-            # Open file with proper locking for multi-process access
             with open(path, "rb") as f:
-                # Acquire shared lock (multiple readers allowed)
-                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
-                try:
-                    pose_dict = pickle.load(f)
-                finally:
-                    # Release lock
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                pose_dict = pickle.load(f)
 
             keypoints = self._extract_keypoints_from_dict(pose_dict)
             keypoints = keypoints[:: self.step_frames]
@@ -111,7 +102,32 @@ class SignLanguageDataset(Dataset):
         except Exception as e:
             logger.error(f"Error loading pickle pose {path.stem}: {e}")
             return self._empty_pose()
+    
+    def _load_pose_format(self, path: Path) -> np.ndarray:
+        """Load pose from .pose format file"""
+        if not POSE_FORMAT_AVAILABLE:
+            logger.error("pose_format library not installed")
+            return self._empty_pose()
         
+        try:
+            with open(path, 'rb') as f:
+                pose = Pose.read(f.read())
+            
+            keypoints = self._extract_keypoints_from_pose(pose)
+            keypoints = keypoints[::self.step_frames]
+            
+            if self.add_noise:
+                noise = np.random.normal(0, self.noise_std, keypoints.shape)
+                keypoints = keypoints + noise
+            
+            keypoints = self._pad_or_truncate(keypoints, self.max_frames)
+            
+            return keypoints
+            
+        except Exception as e:
+            logger.error(f"Error loading pose format {path.stem}: {e}")
+            return self._empty_pose()
+
     def _extract_keypoints_from_dict(self, pose_dict: dict) -> np.ndarray:
         """
         Extract keypoints from pickle dictionary format.

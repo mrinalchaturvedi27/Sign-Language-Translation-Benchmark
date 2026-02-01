@@ -3,15 +3,15 @@
 
 # Data Configuration
 data:
-  train_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csvh"
-  val_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
-  test_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
-  pose_dir: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance/"
+  train_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csv"
+  val_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
+  test_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
+  pose_dir: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance"
   
   max_frames: 300
   max_length: 128
   step_frames: 5
-  num_keypoints: 152
+  num_keypoints: 266
 
 # Model Configuration
 model:
@@ -40,13 +40,13 @@ model:
 # Training Configuration
 training:
   num_epochs: 30
-  batch_size: 4
+  batch_size: 8
   learning_rate: 1e-4  # Lower LR for instruction-tuned models
   weight_decay: 0.01
   betas: [0.9, 0.999]
   
   max_grad_norm: 1.0
-  gradient_accumulation_steps: 8  # Effective batch = 32
+  gradient_accumulation_steps: 4  # Effective batch = 32
   mixed_precision: true
   warmup_ratio: 0.1
   
@@ -57,7 +57,7 @@ training:
   num_beams: 5
   max_gen_length: 128
   
-  use_wandb: true
+  use_wandb: false
   project_name: "sign-language-translation"
   run_name: "qwen2.5_7b_instruct_isign"
   

@@ -19,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
 from dataloaders.sign_dataloader import create_dataloaders
 from models.model_factory import ModelFactory
-from trainers.trainer import Trainer, setup_distributed, cleanup_distributed
+from src.trainers.trainer import Trainer, setup_distributed, cleanup_distributed
+
 
 # Setup logging
 logging.basicConfig(
@@ -123,11 +124,17 @@ def main(config_path: str):
     
     # Create optimizer
     training_config = config['training']
+    lr = float(training_config["learning_rate"])
+    weight_decay = float(training_config.get("weight_decay", 0.0))
+
+    betas = training_config.get("betas", (0.9, 0.999))
+    betas = tuple(map(float, betas))
+ 
     optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=training_config['learning_rate'],
-        weight_decay=training_config.get('weight_decay', 0.01),
-        betas=training_config.get('betas', (0.9, 0.999))
+    model.parameters(),
+    lr=lr,
+    weight_decay=weight_decay,
+    betas=betas
     )
     
     # Create trainer
