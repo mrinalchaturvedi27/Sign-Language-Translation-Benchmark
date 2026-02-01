@@ -11,7 +11,7 @@ data:
   max_frames: 300
   max_length: 128
   step_frames: 5
-  num_keypoints: 152
+  num_keypoints: 266
 
 # Model Configuration
 model:
@@ -30,13 +30,13 @@ model:
 # Training Configuration
 training:
   num_epochs: 50
-  batch_size: 12
+  batch_size: 8
   learning_rate: 5e-5
   weight_decay: 0.01
   betas: [0.9, 0.999]
   
   max_grad_norm: 1.0
-  gradient_accumulation_steps: 3  # Effective batch = 36
+  gradient_accumulation_steps: 4  # Effective batch = 36
   mixed_precision: true
   warmup_ratio: 0.1
   

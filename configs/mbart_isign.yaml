@@ -11,7 +11,7 @@ data:
   max_frames: 300
   max_length: 128
   step_frames: 5
-  num_keypoints: 152
+  num_keypoints: 266
 
 # Model Configuration
 model:
