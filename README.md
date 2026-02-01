@@ -93,9 +93,9 @@ Execution Commands
 
 # Single GPU:
 ```
-python train.py --config configs/my_experiment.yaml
+bash scripts/train_single_gpu.sh configs/my_experiment.yaml
 ```
-# Multi-GPU (DDP):
+# Multi-GPU :
 ```
 bash scripts/train_multi_gpu.sh configs/my_experiment.yaml 4
 ```
