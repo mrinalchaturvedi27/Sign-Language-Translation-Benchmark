@@ -1,0 +1,122 @@
+_wandb:
+    value:
+        cli_version: 0.23.1
+        e:
+            clr2tlge9k6l2fctmamdfvhiefir5qtg:
+                args:
+                    - --config
+                    - configs/t5_base_isign.yaml
+                codePath: train.py
+                codePathLocal: train.py
+                cpu_count: 32
+                cpu_count_logical: 64
+                cudaVersion: "13.0"
+                disk:
+                    /:
+                        total: "216423518208"
+                        used: "195862433792"
+                email: rounakm23@iitk.ac.in
+                executable: /home/ashishu23/miniconda3/bin/python
+                git:
+                    commit: ad7ad93a6338ac23ecebeb1ba3b79846548373c1
+                    remote: https://github.com/mrinalchaturvedi27/Sign-Language-Translation-Benchmark
+                gpu: NVIDIA A40
+                gpu_count: 4
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 10752
+                      memoryTotal: "51527024640"
+                      name: NVIDIA A40
+                      uuid: GPU-07b6a2fa-8105-b4ac-d2de-3169ca670786
+                    - architecture: Ampere
+                      cudaCores: 10752
+                      memoryTotal: "51527024640"
+                      name: NVIDIA A40
+                      uuid: GPU-aac509fc-7ee7-acb5-f3dc-7a44110f7020
+                    - architecture: Ampere
+                      cudaCores: 10752
+                      memoryTotal: "51527024640"
+                      name: NVIDIA A40
+                      uuid: GPU-ca62b313-d395-8ca8-7ef0-eca123b91f43
+                    - architecture: Ampere
+                      cudaCores: 10752
+                      memoryTotal: "51527024640"
+                      name: NVIDIA A40
+                      uuid: GPU-037f0f5d-f180-4f9b-46c6-0b603c553eca
+                host: exploration-lab-server-A40
+                memory:
+                    total: "404327313408"
+                os: Linux-6.8.0-87-generic-x86_64-with-glibc2.35
+                program: /data/dept_share/sanjeet/ugp-26/Mrinal/Sign-Language-Translation-Benchmark/train.py
+                python: CPython 3.13.11
+                root: /data/dept_share/sanjeet/ugp-26/Mrinal/Sign-Language-Translation-Benchmark
+                startedAt: "2026-02-02T06:17:08.123079Z"
+                writerId: clr2tlge9k6l2fctmamdfvhiefir5qtg
+        m: []
+        python_version: 3.13.11
+        t:
+            "1":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 53
+                - 71
+                - 98
+            "2":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 53
+                - 71
+                - 98
+            "3":
+                - 1
+                - 13
+                - 16
+            "4": 3.13.11
+            "5": 0.23.1
+            "6": 4.57.5
+            "12": 0.23.1
+            "13": linux-x86_64
+batch_size:
+    value: 8
+betas:
+    value:
+        - 0.9
+        - 0.999
+checkpoint_dir:
+    value: checkpoints/t5_base_isign
+eval_every:
+    value: 1
+gradient_accumulation_steps:
+    value: 4
+learning_rate:
+    value: "3e-4"
+max_gen_length:
+    value: 128
+max_grad_norm:
+    value: 1
+mixed_precision:
+    value: true
+num_beams:
+    value: 5
+num_epochs:
+    value: 100
+num_workers:
+    value: 4
+project_name:
+    value: sign-language-translation
+run_name:
+    value: t5_base_isign
+save_every:
+    value: 5
+use_wandb:
+    value: true
+warmup_ratio:
+    value: 0.1
+weight_decay:
+    value: 0.01

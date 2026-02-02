@@ -1,0 +1,5 @@
+2026-02-02 11:53:43,775 - src.trainers.trainer - INFO - Trainer initialized on rank 0/1
+2026-02-02 11:53:43,775 - src.trainers.trainer - INFO - Starting training...
+Epoch 1:   0%|                                                                                                                 | 0/11258 [00:00<?, ?it/s]/data/dept_share/sanjeet/ugp-26/Mrinal/Sign-Language-Translation-Benchmark/src/trainers/trainer.py:126: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast(enabled=self.mixed_precision):
+Epoch 1:  13%|█████████▌                                                                  | 1414/11258 [04:28<25:43,  6.38it/s, loss=0.8059, lr=3.76e-06]

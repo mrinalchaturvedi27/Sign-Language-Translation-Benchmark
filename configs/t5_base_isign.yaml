@@ -33,14 +33,14 @@ model:
 training:
   # Basic settings
   num_epochs: 100
-  batch_size: 32  # Adjust based on your GPU memory
+  batch_size: 8  # Adjust based on your GPU memory
   learning_rate: 3e-4
   weight_decay: 0.01
   betas: [0.9, 0.999]
   
   # Gradient settings
   max_grad_norm: 1.0
-  gradient_accumulation_steps: 1  # Increase if batch_size is too small
+  gradient_accumulation_steps: 4  # Increase if batch_size is too small
   
   # Mixed precision
   mixed_precision: true  # Saves memory and speeds up training
