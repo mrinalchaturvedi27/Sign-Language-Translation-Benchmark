@@ -3,10 +3,10 @@
 
 # Data Configuration
 data:
-  train_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csvh"
-  val_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
-  test_path: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
-  pose_dir: "/DATACSEShare/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance/"
+  train_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/train_split_unicode_filtered_matched.csv"
+  val_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/val_split_unicode_filtered_matched.csv"
+  test_path: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/translationexperiment/tokenization/test_split_unicode_filtered_matched.csv"
+  pose_dir: "/data/dept_share/sanjeet/dattatreya/jan8A40/rtmfeaturesisign/performance"
   
   max_frames: 300
   max_length: 128
