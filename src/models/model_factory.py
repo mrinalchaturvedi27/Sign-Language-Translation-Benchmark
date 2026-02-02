@@ -313,14 +313,14 @@ class ModelFactory:
             elif hasattr(model.config, 'vocab_size_or_hidden_size'):
                config_vocab_size = model.config.vocab_size_or_hidden_size
         
-        if config_vocab_size is not None:
+            if config_vocab_size is not None:
             if len(tokenizer) > config_vocab_size:
                 logger.warning(
                     f"Tokenizer vocab size ({len(tokenizer)}) > model vocab size ({config_vocab_size}). "
                     "Resizing model embeddings."
                 )
                 model.resize_token_embeddings(len(tokenizer))
-        else:
+            else:
             # No vocab_size in config, resize to be safe
             logger.info(f"Model config doesn't expose vocab_size, resizing to tokenizer size: {len(tokenizer)}")
             model.resize_token_embeddings(len(tokenizer))
