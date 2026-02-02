@@ -304,10 +304,28 @@ class ModelFactory:
             logger.error(f"Failed to load model {model_name}: {e}")
             raise
         
-        # Resize token embeddings if needed
-        if len(tokenizer) > model.config.vocab_size:
+        # Resize token embeddings if tokenizer vocab size doesn't match model
+        try:
+        # Try to get vocab size from config (different models use different attribute names)
+            config_vocab_size = None
+            if hasattr(model.config, 'vocab_size'):
+               config_vocab_size = model.config.vocab_size
+            elif hasattr(model.config, 'vocab_size_or_hidden_size'):
+               config_vocab_size = model.config.vocab_size_or_hidden_size
+        
+        if config_vocab_size is not None:
+            if len(tokenizer) > config_vocab_size:
+                logger.warning(
+                    f"Tokenizer vocab size ({len(tokenizer)}) > model vocab size ({config_vocab_size}). "
+                    "Resizing model embeddings."
+                )
+                model.resize_token_embeddings(len(tokenizer))
+        else:
+            # No vocab_size in config, resize to be safe
+            logger.info(f"Model config doesn't expose vocab_size, resizing to tokenizer size: {len(tokenizer)}")
             model.resize_token_embeddings(len(tokenizer))
-            logger.info(f"Resized token embeddings to {len(tokenizer)}")
+        except Exception as e:
+            logger.warning(f"Could not check/resize embeddings: {e}. Continuing anyway.")
         
         # Get hidden size from config
         if hasattr(config, 'd_model'):
