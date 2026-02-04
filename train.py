@@ -68,7 +68,8 @@ def main(config_path: str):
     if special_tokens:
         tokenizer.add_special_tokens(special_tokens)
     
-    logger.info(f"Loaded tokenizer: {tokenizer_name} (vocab_size={len(tokenizer)})")
+    if is_main_process:
+        logger.info(f"Loaded tokenizer: {tokenizer_name} (vocab_size={len(tokenizer)})")
     
     # Create dataloaders
     data_config = config['data']
@@ -123,7 +124,10 @@ def main(config_path: str):
     # which may result in some parameters not participating in the loss computation.
     if world_size > 1:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
-        logger.info(f"Rank {rank}: Model wrapped with DDP")
+        if is_main_process:
+            logger.info(f"Model wrapped with DDP (world_size={world_size})")
+        # Synchronize all processes before continuing
+        dist.barrier()
     
     # Create optimizer
     training_config = config['training']
@@ -132,12 +136,15 @@ def main(config_path: str):
 
     betas = training_config.get("betas", (0.9, 0.999))
     betas = tuple(map(float, betas))
- 
+    
+    # NOTE: Effective batch size = batch_size * gradient_accumulation_steps * world_size
+    # If you want to keep the same effective batch size when scaling GPUs, 
+    # divide batch_size by world_size in the config.
     optimizer = torch.optim.AdamW(
-    model.parameters(),
-    lr=lr,
-    weight_decay=weight_decay,
-    betas=betas
+        model.parameters(),
+        lr=lr,
+        weight_decay=weight_decay,
+        betas=betas
     )
     
     # Create trainer
