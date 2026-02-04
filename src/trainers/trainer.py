@@ -11,6 +11,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import get_linear_schedule_with_warmup
 from typing import Dict, Optional, List
+from contextlib import nullcontext
 from pathlib import Path
 import logging
 from tqdm import tqdm
@@ -122,22 +123,30 @@ class Trainer:
             attention_mask = batch['attention_mask'].to(self.device)
             labels = batch['labels'].to(self.device)
             
-            # Forward pass with mixed precision
-            with autocast("cuda", enabled=self.mixed_precision):
-                outputs = self.model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    labels=labels
-                )
-                loss = outputs['loss'] / self.gradient_accumulation_steps
+            # Determine if we should sync gradients (only on last accumulation step)
+            # This avoids unnecessary all-reduce operations during gradient accumulation
+            # no_sync() is only available on DDP-wrapped models
+            is_accumulation_step = (batch_idx + 1) % self.gradient_accumulation_steps != 0
+            use_no_sync = self.world_size > 1 and is_accumulation_step and isinstance(self.model, DDP)
+            sync_context = self.model.no_sync() if use_no_sync else nullcontext()
             
-            # Backward pass
-            if self.mixed_precision:
-                self.scaler.scale(loss).backward()
-            else:
-                loss.backward()
+            with sync_context:
+                # Forward pass with mixed precision
+                with autocast("cuda", enabled=self.mixed_precision):
+                    outputs = self.model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        labels=labels
+                    )
+                    loss = outputs['loss'] / self.gradient_accumulation_steps
+                
+                # Backward pass
+                if self.mixed_precision:
+                    self.scaler.scale(loss).backward()
+                else:
+                    loss.backward()
             
-            # Gradient accumulation
+            # Gradient accumulation - optimizer step only after accumulating enough gradients
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
                 # Gradient clipping
                 if self.mixed_precision:
