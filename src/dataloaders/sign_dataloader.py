@@ -1,13 +1,16 @@
 """
 Generic Sign Language DataLoader - UPDATED
 Supports both .pose and .pkl formats with variable keypoint counts
+Includes DistributedSampler support for multi-GPU training
 """
 
 import torch
+import torch.distributed as dist
 import fcntl  # For file locking in multi-process
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.distributed import DistributedSampler
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import pickle
@@ -300,7 +303,7 @@ def create_dataloaders(
     num_workers: int = 4,
     **dataset_kwargs,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
-    """Create train/val/test dataloaders"""
+    """Create train/val/test dataloaders with optional distributed sampling"""
 
     train_dataset = SignLanguageDataset(
         train_path, pose_dir, tokenizer, add_noise=True, **dataset_kwargs
@@ -317,11 +320,26 @@ def create_dataloaders(
         f"Val={len(val_dataset)}, Test={len(test_dataset)}"
     )
 
+    # Check if distributed training is enabled
+    is_distributed = dist.is_initialized()
+
+    # Create samplers for distributed training
+    if is_distributed:
+        train_sampler = DistributedSampler(train_dataset, shuffle=True)
+        val_sampler = DistributedSampler(val_dataset, shuffle=False)
+        test_sampler = DistributedSampler(test_dataset, shuffle=False)
+        logger.info("Using DistributedSampler for multi-GPU training")
+    else:
+        train_sampler = None
+        val_sampler = None
+        test_sampler = None
+
     return (
         DataLoader(
             train_dataset,
             batch_size,
-            shuffle=True,
+            shuffle=False if train_sampler is not None else True,  # Mutually exclusive with sampler
+            sampler=train_sampler,
             num_workers=num_workers,
             pin_memory=True,
             drop_last=True,
@@ -329,14 +347,16 @@ def create_dataloaders(
         DataLoader(
             val_dataset,
             batch_size,
-            shuffle=False,
+            shuffle=False,  # Never shuffle validation
+            sampler=val_sampler,
             num_workers=num_workers,
             pin_memory=True,
         ),
         DataLoader(
             test_dataset,
             batch_size,
-            shuffle=False,
+            shuffle=False,  # Never shuffle test
+            sampler=test_sampler,
             num_workers=num_workers,
             pin_memory=True,
         ),

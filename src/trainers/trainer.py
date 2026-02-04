@@ -6,7 +6,7 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import get_linear_schedule_with_warmup
@@ -82,7 +82,7 @@ class Trainer:
         self.best_val_bleu = 0.0
         
         # Mixed precision
-        self.scaler = GradScaler() if self.mixed_precision else None
+        self.scaler = GradScaler("cuda") if self.mixed_precision else None
         
         # Learning rate scheduler
         total_steps = len(train_loader) * self.num_epochs // self.gradient_accumulation_steps
@@ -123,7 +123,7 @@ class Trainer:
             labels = batch['labels'].to(self.device)
             
             # Forward pass with mixed precision
-            with autocast(enabled=self.mixed_precision):
+            with autocast("cuda", enabled=self.mixed_precision):
                 outputs = self.model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
@@ -182,6 +182,9 @@ class Trainer:
         all_predictions = []
         all_references = []
         
+        # Get the underlying model for generation (unwrap DDP if needed)
+        model_for_generate = self.model.module if isinstance(self.model, DDP) else self.model
+        
         if self.is_main_process:
             pbar = tqdm(data_loader, desc=f"Evaluating {split}")
         else:
@@ -200,8 +203,8 @@ class Trainer:
             )
             total_loss += outputs['loss'].item()
             
-            # Generate predictions
-            generated = self.model.generate(
+            # Generate predictions (use unwrapped model for generation)
+            generated = model_for_generate.generate(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 max_length=self.max_gen_length,
@@ -272,6 +275,12 @@ class Trainer:
         logger.info("Starting training...")
         
         for epoch in range(1, self.num_epochs + 1):
+            # Set epoch on DistributedSampler for proper shuffling across epochs
+            if self.world_size > 1 and hasattr(self.train_loader, 'sampler'):
+                sampler = self.train_loader.sampler
+                if hasattr(sampler, 'set_epoch'):
+                    sampler.set_epoch(epoch)
+            
             # Train
             train_loss = self.train_epoch(epoch)
             
