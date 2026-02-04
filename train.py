@@ -138,7 +138,7 @@ def main(config_path: str):
     betas = tuple(map(float, betas))
     
     # NOTE: Effective batch size = batch_size * gradient_accumulation_steps * world_size
-    # If you want to keep the same effective batch size when scaling GPUs, 
+    # If you want to keep the same effective batch size when scaling GPUs,
     # divide batch_size by world_size in the config.
     optimizer = torch.optim.AdamW(
         model.parameters(),
