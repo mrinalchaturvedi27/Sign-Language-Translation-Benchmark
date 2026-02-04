@@ -118,6 +118,9 @@ def main(config_path: str):
         logger.info(f"  Trainable parameters: {trainable_params:,}")
     
     # Wrap model with DDP for multi-GPU
+    # Note: find_unused_parameters=True is needed because the model has different code
+    # paths for encoder-decoder vs causal LM models (in SignLanguageTranslationModel.forward()),
+    # which may result in some parameters not participating in the loss computation.
     if world_size > 1:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
         logger.info(f"Rank {rank}: Model wrapped with DDP")

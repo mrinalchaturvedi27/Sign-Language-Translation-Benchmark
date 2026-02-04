@@ -338,7 +338,7 @@ def create_dataloaders(
         DataLoader(
             train_dataset,
             batch_size,
-            shuffle=(train_sampler is None),  # Only shuffle if not using sampler
+            shuffle=False if train_sampler is not None else True,  # Mutually exclusive with sampler
             sampler=train_sampler,
             num_workers=num_workers,
             pin_memory=True,
@@ -347,7 +347,7 @@ def create_dataloaders(
         DataLoader(
             val_dataset,
             batch_size,
-            shuffle=False,
+            shuffle=False,  # Never shuffle validation
             sampler=val_sampler,
             num_workers=num_workers,
             pin_memory=True,
@@ -355,7 +355,7 @@ def create_dataloaders(
         DataLoader(
             test_dataset,
             batch_size,
-            shuffle=False,
+            shuffle=False,  # Never shuffle test
             sampler=test_sampler,
             num_workers=num_workers,
             pin_memory=True,
