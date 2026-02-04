@@ -34,19 +34,19 @@ training:
   # Basic settings
   num_epochs: 100
   batch_size: 8  # Adjust based on your GPU memory
-  learning_rate: 3e-4
+  learning_rate: 1e-4
   weight_decay: 0.01
   betas: [0.9, 0.999]
   
   # Gradient settings
-  max_grad_norm: 1.0
+  max_grad_norm: 0.5
   gradient_accumulation_steps: 4  # Increase if batch_size is too small
   
   # Mixed precision
-  mixed_precision: true  # Saves memory and speeds up training
+  mixed_precision: false  # Saves memory and speeds up training
   
   # Scheduling
-  warmup_ratio: 0.1  # 10% warmup steps
+  warmup_ratio: 0.05  # 10% warmup steps
   
   # Checkpointing
   checkpoint_dir: "checkpoints/t5_base_isign"
