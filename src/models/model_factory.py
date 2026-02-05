@@ -148,6 +148,7 @@ class SignLanguageTranslationModel(nn.Module):
         attention_mask: torch.Tensor,
         max_length: int = 128,
         num_beams: int = 5,
+        **kwargs,
     ):
         projected = self.feature_projection(input_ids)
 
@@ -157,6 +158,7 @@ class SignLanguageTranslationModel(nn.Module):
                 attention_mask=attention_mask,
                 max_length=max_length,
                 num_beams=num_beams,
+                **kwargs,
             )
 
         generated = self.model.generate(
@@ -166,6 +168,7 @@ class SignLanguageTranslationModel(nn.Module):
             num_beams=num_beams,
             pad_token_id=self.tokenizer.pad_token_id,
             eos_token_id=self.tokenizer.eos_token_id,
+            **kwargs,
         )
 
         return generated[:, projected.size(1):]
