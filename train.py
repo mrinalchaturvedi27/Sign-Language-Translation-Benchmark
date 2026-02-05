@@ -92,6 +92,15 @@ def main(config_path: str):
         logger.info(f"  Train: {len(train_loader.dataset)} samples")
         logger.info(f"  Val: {len(val_loader.dataset)} samples")
         logger.info(f"  Test: {len(test_loader.dataset)} samples")
+        grad_steps = config['training'].get('gradient_accumulation_steps', 1)
+        effective_batch_size = config['training']['batch_size'] * grad_steps * world_size
+        logger.info(
+            "Effective batch size: "
+            f"{config['training']['batch_size']} (per GPU) x "
+            f"{grad_steps} accumulation x {world_size} GPU(s) = "
+            f"{effective_batch_size}"
+        )
+        logger.info(f"Steps per epoch (per rank): {len(train_loader)}")
     
     # Create model
     model_config = config['model']

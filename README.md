@@ -117,6 +117,8 @@ We use Weights & Biases for collaborative monitoring.
 
     Sanity Check: Run python sanity_check_dataloader.py to verify data integrity before starting long jobs.
 
+    Multi-GPU same speed as single GPU: Ensure multiple GPUs are visible (check CUDA_VISIBLE_DEVICES). Keep batch_size as per-GPU to scale throughput; logs show effective batch size and steps per epoch.
+
 Maintained by: Sign Language Translation Team
 
 Last Updated: February 2026
