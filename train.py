@@ -137,9 +137,12 @@ def main(config_path: str):
     betas = training_config.get("betas", (0.9, 0.999))
     betas = tuple(map(float, betas))
     
-    # NOTE: Effective batch size = batch_size * gradient_accumulation_steps * world_size
-    # If you want to keep the same effective batch size when scaling GPUs,
-    # divide batch_size by world_size in the config.
+    # NOTE: Multi-GPU batch size behavior:
+    # - Each GPU processes `batch_size` samples from its subset of the dataset
+    # - Total samples per step = batch_size * world_size
+    # - Effective batch size = batch_size * gradient_accumulation_steps * world_size
+    # - For faster training with multi-GPU, keep batch_size per GPU the same
+    # - For same effective batch size across different GPU counts, scale batch_size inversely
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=lr,
