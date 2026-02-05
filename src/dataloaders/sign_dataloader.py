@@ -6,7 +6,6 @@ Includes DistributedSampler support for multi-GPU training
 
 import torch
 import torch.distributed as dist
-import fcntl  # For file locking in multi-process
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
@@ -91,17 +90,13 @@ class SignLanguageDataset(Dataset):
         return self._empty_pose()
 
     def _load_pkl_pose(self, path: Path) -> np.ndarray:
-        """Load pose from pickle file with file locking for multi-process"""
+        """Load pose from pickle file"""
         try:
-            # Open file with proper locking for multi-process access
+            # Load pickle file directly without file locking
+            # File locking is unnecessary for read-only operations and causes
+            # severe performance degradation in multi-GPU training due to contention
             with open(path, "rb") as f:
-                # Acquire shared lock (multiple readers allowed)
-                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
-                try:
-                    pose_dict = pickle.load(f)
-                finally:
-                    # Release lock
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                pose_dict = pickle.load(f)
 
             keypoints = self._extract_keypoints_from_dict(pose_dict)
             keypoints = keypoints[:: self.step_frames]
@@ -335,6 +330,7 @@ def create_dataloaders(
         test_sampler = None
 
     return (
+        # Reuse workers between epochs for better performance
         DataLoader(
             train_dataset,
             batch_size,
@@ -343,6 +339,7 @@ def create_dataloaders(
             num_workers=num_workers,
             pin_memory=True,
             drop_last=True,
+            persistent_workers=num_workers > 0,
         ),
         DataLoader(
             val_dataset,
@@ -351,6 +348,7 @@ def create_dataloaders(
             sampler=val_sampler,
             num_workers=num_workers,
             pin_memory=True,
+            persistent_workers=num_workers > 0,
         ),
         DataLoader(
             test_dataset,
@@ -359,5 +357,6 @@ def create_dataloaders(
             sampler=test_sampler,
             num_workers=num_workers,
             pin_memory=True,
+            persistent_workers=num_workers > 0,
         ),
     )
