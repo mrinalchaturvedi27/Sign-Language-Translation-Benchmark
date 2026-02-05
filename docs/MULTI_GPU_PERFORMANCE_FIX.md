@@ -57,7 +57,7 @@ DataLoader(
     dataset,
     batch_size=batch_size,
     num_workers=num_workers,
-    persistent_workers=True if num_workers > 0 else False,  # NEW
+    persistent_workers=num_workers > 0,  # NEW
     ...
 )
 ```
