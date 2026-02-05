@@ -343,6 +343,23 @@ def setup_distributed():
         local_rank = 0
     
     if world_size > 1:
+        if not torch.cuda.is_available():
+            raise RuntimeError("Distributed training requested but CUDA is not available.")
+
+        available_gpus = torch.cuda.device_count()
+        if available_gpus < world_size:
+            visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", "all")
+            raise RuntimeError(
+                f"Distributed training requested with WORLD_SIZE={world_size}, "
+                f"but only {available_gpus} CUDA device(s) are visible "
+                f"(CUDA_VISIBLE_DEVICES={visible_devices}). "
+                "Update CUDA_VISIBLE_DEVICES or the num_gpus argument."
+            )
+        if local_rank >= available_gpus:
+            raise RuntimeError(
+                f"LOCAL_RANK={local_rank} exceeds available CUDA devices ({available_gpus})."
+            )
+
         torch.cuda.set_device(local_rank)
         dist.init_process_group(backend='nccl')
         
