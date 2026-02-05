@@ -338,7 +338,7 @@ def create_dataloaders(
             num_workers=num_workers,
             pin_memory=True,
             drop_last=True,
-            persistent_workers=True if num_workers > 0 else False,  # Reuse workers between epochs
+            persistent_workers=num_workers > 0,  # Reuse workers between epochs
         ),
         DataLoader(
             val_dataset,
@@ -347,7 +347,7 @@ def create_dataloaders(
             sampler=val_sampler,
             num_workers=num_workers,
             pin_memory=True,
-            persistent_workers=True if num_workers > 0 else False,
+            persistent_workers=num_workers > 0,
         ),
         DataLoader(
             test_dataset,
@@ -356,6 +356,6 @@ def create_dataloaders(
             sampler=test_sampler,
             num_workers=num_workers,
             pin_memory=True,
-            persistent_workers=True if num_workers > 0 else False,
+            persistent_workers=num_workers > 0,
         ),
     )
