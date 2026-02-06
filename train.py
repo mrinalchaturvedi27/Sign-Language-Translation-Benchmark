@@ -53,6 +53,12 @@ def main(config_path: str):
         logger.info(f"Training on {world_size} GPU(s)")
         logger.info(f"Config: {config}")
     
+    # Performance optimizations (config-driven, safe defaults)
+    if config.get('optimizations', {}).get('cudnn_benchmark', False):
+        torch.backends.cudnn.benchmark = True
+        if is_main_process:
+            logger.info("Enabled cudnn.benchmark for faster convolutions")
+    
     # Set seed
     seed = config.get('seed', 42)
     torch.manual_seed(seed)
@@ -73,6 +79,7 @@ def main(config_path: str):
     
     # Create dataloaders
     data_config = config['data']
+    cache_in_memory = config.get('optimizations', {}).get('cache_in_memory', False)
     train_loader, val_loader, test_loader = create_dataloaders(
         train_path=data_config['train_path'],
         val_path=data_config['val_path'],
@@ -84,7 +91,8 @@ def main(config_path: str):
         max_frames=data_config['max_frames'],
         max_length=data_config['max_length'],
         step_frames=data_config.get('step_frames', 1),
-        num_keypoints=data_config['num_keypoints']
+        num_keypoints=data_config['num_keypoints'],
+        cache_in_memory=cache_in_memory,
     )
     
     if is_main_process:
@@ -132,11 +140,33 @@ def main(config_path: str):
     # paths for encoder-decoder vs causal LM models (in SignLanguageTranslationModel.forward()),
     # which may result in some parameters not participating in the loss computation.
     if world_size > 1:
-        model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+        opt_config = config.get('optimizations', {})
+        use_static_graph = opt_config.get('static_graph', False)
+        ddp_kwargs = dict(
+            device_ids=[local_rank],
+            output_device=local_rank,
+            find_unused_parameters=True,
+            static_graph=use_static_graph,
+        )
+        # DDP bucket size tuning (default 25MB)
+        bucket_cap_mb = opt_config.get('ddp_bucket_cap_mb', None)
+        if bucket_cap_mb is not None:
+            ddp_kwargs['bucket_cap_mb'] = bucket_cap_mb
+        model = DDP(model, **ddp_kwargs)
         if is_main_process:
-            logger.info(f"Model wrapped with DDP (world_size={world_size})")
+            logger.info(
+                f"Model wrapped with DDP (world_size={world_size}, "
+                f"static_graph={use_static_graph})"
+            )
         # Synchronize all processes before continuing
         # dist.barrier()  # Removed - causes hang
+    
+    # Optional: torch.compile for JIT speedup (PyTorch 2.0+)
+    if config.get('optimizations', {}).get('torch_compile', False):
+        compile_mode = config.get('optimizations', {}).get('compile_mode', 'default')
+        if is_main_process:
+            logger.info(f"Compiling model with torch.compile(mode='{compile_mode}')")
+        model = torch.compile(model, mode=compile_mode)
     
     # Create optimizer
     training_config = config['training']
