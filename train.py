@@ -136,7 +136,7 @@ def main(config_path: str):
         if is_main_process:
             logger.info(f"Model wrapped with DDP (world_size={world_size})")
         # Synchronize all processes before continuing
-        dist.barrier()
+        # dist.barrier()  # Removed - causes hang
     
     # Create optimizer
     training_config = config['training']
