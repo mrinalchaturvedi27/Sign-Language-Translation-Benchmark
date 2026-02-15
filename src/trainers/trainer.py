@@ -72,6 +72,12 @@ class Trainer:
         self.save_every = config.get('save_every', 5)
         self.eval_every = config.get('eval_every', 1)
         
+        # Determine mixed precision dtype (bf16 preferred on A40/Ampere+)
+        self.amp_dtype = torch.float16  # default
+        mp_dtype = config.get('mixed_precision_dtype', 'fp16')
+        if mp_dtype == 'bf16' and torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+            self.amp_dtype = torch.bfloat16
+        
         # Generation config
         self.num_beams = config.get('num_beams', 5)
         self.max_gen_length = config.get('max_gen_length', 128)
@@ -82,8 +88,9 @@ class Trainer:
         self.best_val_loss = float('inf')
         self.best_val_bleu = 0.0
         
-        # Mixed precision
-        self.scaler = GradScaler("cuda") if self.mixed_precision else None
+        # Mixed precision (GradScaler not needed for bf16)
+        use_scaler = self.mixed_precision and self.amp_dtype == torch.float16
+        self.scaler = GradScaler("cuda") if use_scaler else None
         
         # Learning rate scheduler
         total_steps = len(train_loader) * self.num_epochs // self.gradient_accumulation_steps
@@ -118,10 +125,10 @@ class Trainer:
             pbar = self.train_loader
         
         for batch_idx, batch in enumerate(pbar):
-            # Move to device
-            input_ids = batch['input_ids'].to(self.device)
-            attention_mask = batch['attention_mask'].to(self.device)
-            labels = batch['labels'].to(self.device)
+            # Move to device (non-blocking for overlapped transfers)
+            input_ids = batch['input_ids'].to(self.device, non_blocking=True)
+            attention_mask = batch['attention_mask'].to(self.device, non_blocking=True)
+            labels = batch['labels'].to(self.device, non_blocking=True)
             
             # Determine if we should sync gradients (only on last accumulation step)
             # This avoids unnecessary all-reduce operations during gradient accumulation
@@ -132,7 +139,7 @@ class Trainer:
             
             with sync_context:
                 # Forward pass with mixed precision
-                with autocast("cuda", enabled=self.mixed_precision):
+                with autocast("cuda", enabled=self.mixed_precision, dtype=self.amp_dtype):
                     outputs = self.model(
                         input_ids=input_ids,
                         attention_mask=attention_mask,
@@ -141,7 +148,7 @@ class Trainer:
                     loss = outputs['loss'] / self.gradient_accumulation_steps
                 
                 # Backward pass
-                if self.mixed_precision:
+                if self.scaler is not None:
                     self.scaler.scale(loss).backward()
                 else:
                     loss.backward()
@@ -149,7 +156,7 @@ class Trainer:
             # Gradient accumulation - optimizer step only after accumulating enough gradients
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
                 # Gradient clipping
-                if self.mixed_precision:
+                if self.scaler is not None:
                     self.scaler.unscale_(self.optimizer)
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
                     self.scaler.step(self.optimizer)
@@ -159,7 +166,7 @@ class Trainer:
                     self.optimizer.step()
                 
                 self.scheduler.step()
-                self.optimizer.zero_grad()
+                self.optimizer.zero_grad(set_to_none=True)
                 self.global_step += 1
             
             # Logging

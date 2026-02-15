@@ -41,6 +41,7 @@ class SignLanguageDataset(Dataset):
         use_video: bool = False,
         num_keypoints: int = 266,  # 133 × 2
         labels: Optional[List[List[int]]] = None,
+        cache_in_memory: bool = False,
     ):
         self.data_path = Path(data_path)
         self.pose_dir = Path(pose_dir)
@@ -52,6 +53,7 @@ class SignLanguageDataset(Dataset):
         self.noise_std = noise_std
         self.use_video = use_video
         self.num_keypoints = num_keypoints
+        self.cache_in_memory = cache_in_memory
 
         self.target_joints = num_keypoints // 2  # 133
 
@@ -62,6 +64,20 @@ class SignLanguageDataset(Dataset):
             self.labels = labels
         else:
             self.labels = self._tokenize_texts(self.df["text"].tolist())
+
+        # Pre-load all poses into memory to avoid repeated pickle I/O
+        self._pose_cache = {}
+        if self.cache_in_memory:
+            self._preload_poses()
+
+    def _preload_poses(self):
+        """Pre-load all pose data into memory to eliminate per-batch pickle I/O."""
+        logger.info(f"Pre-loading {len(self.df)} poses into memory...")
+        for idx in range(len(self.df)):
+            row = self.df.iloc[idx]
+            uid = row.get("uid", row.get("video_path", str(idx)))
+            self._pose_cache[idx] = self._load_pose(uid)
+        logger.info(f"Pre-loaded {len(self._pose_cache)} poses into memory")
 
     def _tokenize_texts(self, texts: List[str]) -> List[List[int]]:
         encodings = self.tokenizer(
@@ -276,10 +292,12 @@ class SignLanguageDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
-        row = self.df.iloc[idx]
-        uid = row.get("uid", row.get("video_path", str(idx)))
-
-        pose = self._load_pose(uid)
+        if idx in self._pose_cache:
+            pose = self._pose_cache[idx]
+        else:
+            row = self.df.iloc[idx]
+            uid = row.get("uid", row.get("video_path", str(idx)))
+            pose = self._load_pose(uid)
 
         return {
             "input_ids": torch.from_numpy(pose),
