@@ -17,24 +17,16 @@ import logging
 from tqdm import tqdm
 import wandb
 import numpy as np
-from datetime import datetime
+import pandas as pd
+from datetime import datetime, timedelta
 
 from ..utils.metrics import compute_bleu, compute_rouge
 
 logger = logging.getLogger(__name__)
 
-
 class Trainer:
     """
     Multi-GPU Trainer with all the bells and whistles
-    
-    Features:
-    - Distributed Data Parallel (DDP)
-    - Mixed Precision Training (AMP)
-    - Gradient Accumulation
-    - Automatic Checkpointing
-    - WandB logging
-    - Learning Rate Scheduling
     """
     
     def __init__(
@@ -123,15 +115,11 @@ class Trainer:
             attention_mask = batch['attention_mask'].to(self.device)
             labels = batch['labels'].to(self.device)
             
-            # Determine if we should sync gradients (only on last accumulation step)
-            # This avoids unnecessary all-reduce operations during gradient accumulation
-            # no_sync() is only available on DDP-wrapped models
             is_accumulation_step = (batch_idx + 1) % self.gradient_accumulation_steps != 0
             use_no_sync = self.world_size > 1 and is_accumulation_step and isinstance(self.model, DDP)
             sync_context = self.model.no_sync() if use_no_sync else nullcontext()
             
             with sync_context:
-                # Forward pass with mixed precision
                 with autocast("cuda", enabled=self.mixed_precision):
                     outputs = self.model(
                         input_ids=input_ids,
@@ -159,7 +147,7 @@ class Trainer:
                     self.optimizer.step()
                 
                 self.scheduler.step()
-                self.optimizer.zero_grad()
+                self.optimizer.zero_grad(set_to_none=self.config.get("_use_set_to_none", True))
                 self.global_step += 1
             
             # Logging
@@ -212,7 +200,7 @@ class Trainer:
             )
             total_loss += outputs['loss'].item()
             
-            # Generate predictions (use unwrapped model for generation)
+            # Generate predictions
             generated = model_for_generate.generate(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
@@ -284,7 +272,6 @@ class Trainer:
         logger.info("Starting training...")
         
         for epoch in range(1, self.num_epochs + 1):
-            # Set epoch on DistributedSampler for proper shuffling across epochs
             if self.world_size > 1 and hasattr(self.train_loader, 'sampler'):
                 sampler = self.train_loader.sampler
                 if hasattr(sampler, 'set_epoch'):
@@ -300,7 +287,23 @@ class Trainer:
             if epoch % self.eval_every == 0:
                 val_metrics, val_preds, val_refs = self.evaluate(self.val_loader, split='val')
                 
-                # Test evaluation (optional, can be less frequent)
+                if self.is_main_process:
+                    try:
+                        clean_preds = [str(p) for p in val_preds]
+                        clean_refs = [str(r) for r in val_refs]
+                        
+                        df_preds = pd.DataFrame({
+                            'epoch': [epoch] * len(clean_preds),
+                            'prediction': clean_preds,
+                            'ground_truth': clean_refs
+                        })
+                        
+                        csv_path = self.checkpoint_dir / f'predictions_epoch_{epoch}.csv'
+                        df_preds.to_csv(csv_path, index=False)
+                        logger.info(f"Saved validation predictions to {csv_path}")
+                    except Exception as e:
+                        logger.error(f"Failed to save prediction CSV: {e}")
+
                 if epoch % (self.eval_every * 2) == 0:
                     test_metrics, test_preds, test_refs = self.evaluate(self.test_loader, split='test')
                 else:
@@ -322,11 +325,14 @@ class Trainer:
                 
                 if epoch % self.save_every == 0 or is_best:
                     self.save_checkpoint(epoch, val_metrics, is_best=is_best)
+            
+            # SYNC FIX: Ensure no GPU gets left behind
+            if self.world_size > 1:
+                dist.barrier()
         
         if self.is_main_process:
             logger.info("Training completed!")
             logger.info(f"Best Val BLEU-4: {self.best_val_bleu*100:.2f}")
-            
             if self.use_wandb:
                 wandb.finish()
 
@@ -346,22 +352,13 @@ def setup_distributed():
         if not torch.cuda.is_available():
             raise RuntimeError("Distributed training requested but CUDA is not available.")
 
-        available_gpus = torch.cuda.device_count()
-        if available_gpus < world_size:
-            visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", "all")
-            raise RuntimeError(
-                f"Distributed training requested with WORLD_SIZE={world_size}, "
-                f"but only {available_gpus} CUDA device(s) are visible "
-                f"(CUDA_VISIBLE_DEVICES={visible_devices}). "
-                "Update CUDA_VISIBLE_DEVICES or the num_gpus argument."
-            )
-        if local_rank >= available_gpus:
-            raise RuntimeError(
-                f"LOCAL_RANK={local_rank} exceeds available CUDA devices ({available_gpus})."
-            )
-
         torch.cuda.set_device(local_rank)
-        dist.init_process_group(backend='nccl')
+        
+        # TIMEOUT FIX: 2 Hours!
+        dist.init_process_group(
+            backend='nccl', 
+            timeout=timedelta(seconds=7200)
+        )
         
     return rank, world_size, local_rank
 
@@ -372,12 +369,8 @@ def cleanup_distributed():
         dist.destroy_process_group()
 
 
-# Example usage
 if __name__ == "__main__":
     import os
-    
-    # Setup distributed
     rank, world_size, local_rank = setup_distributed()
     device = torch.device(f'cuda:{local_rank}' if torch.cuda.is_available() else 'cpu')
-    
     print(f"Rank {rank}/{world_size} on device {device}")
