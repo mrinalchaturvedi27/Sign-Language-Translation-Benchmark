@@ -161,6 +161,7 @@ class SignLanguageTranslationModel(nn.Module):
                 **kwargs,
             )
 
+        # --- FIX FOR CAUSAL LM (GEMMA) ---
         generated = self.model.generate(
             inputs_embeds=projected,
             attention_mask=attention_mask,
@@ -171,7 +172,12 @@ class SignLanguageTranslationModel(nn.Module):
             **kwargs,
         )
 
-        return generated[:, projected.size(1):]
+        # CRITICAL FIX: Only slice if the output includes the input prompt!
+        # HuggingFace sometimes returns ONLY the new tokens.
+        if generated.shape[1] > projected.size(1):
+            return generated[:, projected.size(1):]
+        else:
+            return generated
 
 
 # ------------------ Model Factory ------------------ #
@@ -184,7 +190,7 @@ class ModelFactory:
         tokenizer: PreTrainedTokenizer,
         dropout: float = 0.1,
         freeze_encoder: bool = False,
-        freeze_decoder: bool = False,
+        freeze_decoder: bool = True,
         use_lora: bool = False,
         lora_config: Optional[Dict] = None,
         load_in_8bit: bool = False,
@@ -239,10 +245,14 @@ class ModelFactory:
             )
 
         # -------- Hidden Size -------- #
-        if hasattr(config, "d_model"):
-            hidden_size = config.d_model
-        elif hasattr(config, "hidden_size"):
+        # --- GEMMA 3 FIX START ---
+        if hasattr(config, "text_config"):
+            hidden_size = getattr(config.text_config, "hidden_size", 2560)
+        # --- GEMMA 3 FIX END ---
+        elif hasattr(config, "hidden_size"):   
             hidden_size = config.hidden_size
+        elif hasattr(config, "d_model"):
+            hidden_size = config.d_model
         else:
             raise ValueError("Cannot determine hidden size")
 
