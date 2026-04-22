@@ -21,7 +21,6 @@ from dataloaders.sign_dataloader import create_dataloaders
 from models.model_factory import ModelFactory
 from src.trainers.trainer import Trainer, setup_distributed, cleanup_distributed
 
-
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
@@ -127,16 +126,10 @@ def main(config_path: str):
         logger.info(f"  Total parameters: {total_params:,}")
         logger.info(f"  Trainable parameters: {trainable_params:,}")
     
-    # Wrap model with DDP for multi-GPU
-    # Note: find_unused_parameters=True is needed because the model has different code
-    # paths for encoder-decoder vs causal LM models (in SignLanguageTranslationModel.forward()),
-    # which may result in some parameters not participating in the loss computation.
     if world_size > 1:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
         if is_main_process:
             logger.info(f"Model wrapped with DDP (world_size={world_size})")
-        # Synchronize all processes before continuing
-        # dist.barrier()  # Removed - causes hang
     
     # Create optimizer
     training_config = config['training']
@@ -146,12 +139,6 @@ def main(config_path: str):
     betas = training_config.get("betas", (0.9, 0.999))
     betas = tuple(map(float, betas))
     
-    # NOTE: Multi-GPU batch size behavior:
-    # - Each GPU processes `batch_size` samples from its subset of the dataset
-    # - Total samples per step = batch_size * world_size
-    # - Effective batch size = batch_size * gradient_accumulation_steps * world_size
-    # - For faster training with multi-GPU, keep batch_size per GPU the same
-    # - For same effective batch size across different GPU counts, scale batch_size inversely
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=lr,
@@ -183,7 +170,6 @@ def main(config_path: str):
     if is_main_process:
         logger.info("Training completed successfully!")
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train Sign Language Translation Model')
     parser.add_argument(
@@ -192,7 +178,5 @@ if __name__ == "__main__":
         required=True,
         help='Path to config YAML file'
     )
-    
     args = parser.parse_args()
-    
     main(args.config)
